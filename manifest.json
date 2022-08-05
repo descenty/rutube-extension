@@ -1,0 +1,17 @@
+{
+    "manifest_version": 2,
+    "name": "Rutube Views",
+    "version": "0.1.0",
+    "content_scripts": [
+        {
+            "matches": ["https://rutube.ru/*"],
+            "js": ["script.js"]
+        }
+    ],
+    "permissions": [
+        "webRequest",
+        "<all_urls>",
+        "webRequestBlocking",
+        "tabs"
+    ]
+}
