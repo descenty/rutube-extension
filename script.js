@@ -5,7 +5,6 @@ let url_id = ''
 
 function get_views_word(views) {
     let views_last_char = views.toString().at(-1);
-    let views_word;
     if (views >= 11 && views <= 14)
         return 'просмотров'
     else if (views_last_char === '1')
@@ -53,7 +52,6 @@ function update_likes_on_video() {
 
 
 function update_video_page() {
-    window.alert('video-page')
     update_views_on_video()
     update_likes_on_video()
 }
@@ -78,7 +76,6 @@ function update_views_on_channel() {
 }
 
 function update_channel_page() {
-    window.alert('channel-page')
     update_views_on_channel()
 }
 
