@@ -1,27 +1,85 @@
 let views_p
+let likes_span
+let channel_views
+let url_id = ''
 
-function add_views_to_page(views) {
+function get_views_word(views) {
     let views_last_char = views.toString().at(-1);
     let views_word;
-    if (views_last_char === '1')
-        views_word = 'просмотр'
+    if (views >= 11 && views <= 14)
+        return 'просмотров'
+    else if (views_last_char === '1')
+        return 'просмотр'
     else if ('234'.includes(views_last_char))
-        views_word = 'просмотра'
-    else
-        views_word = 'просмотров'
-    views_p.textContent = `${views} ${views_word}`
+        return 'просмотра'
+    return 'просмотров'
 }
 
-function update_video_page() {
-    var url = 'https://rutube.ru/pangolin/api/web/video/' + location.href.split('/').at(-2)
-    fetch(url).then(data => data.json().then(json_data => {
-        if (views_p === undefined) {
-            views_p = document.createElement('p')
-            document.getElementsByClassName('video-pageinfo-container-module__pageHeaderRow')[0].after(views_p)
-        }
-        add_views_to_page(json_data.result.video.hits)
-    }))
+function add_views_to_video(views) {
+    if (views_p === undefined) {
+        views_p = document.createElement('p')
+        document.getElementsByClassName('video-pageinfo-container-module__pageHeaderRow')[0].after(views_p)
+    }
+    views_p.textContent = `${views} ${get_views_word(views)}`
+}
 
+function add_likes_to_video(likes) {
+    if (likes_span === undefined) {
+        let like_button = document.getElementsByClassName('pen-share-button pen-share-button__top')[0]
+        like_button.addEventListener('click', () => {
+            setTimeout(() => update_likes_on_video(), 250)
+        })
+        likes_span = document.createElement('span')
+        like_button.insertBefore(likes_span, like_button.firstChild)
+    }
+    likes_span.innerHTML = `${likes}&nbsp;&nbsp;`
+}
+
+function update_views_on_video() {
+    let video_data_url = 'https://rutube.ru/pangolin/api/web/video/' + url_id;
+    fetch(video_data_url).then(data => data.json().then(json_data => {
+        let video_data = json_data.result.video
+        add_views_to_video(video_data.hits)
+    }))
+}
+
+function update_likes_on_video() {
+    let video_rating_url = 'https://rutube.ru/api/rating/video/' + url_id;
+    fetch(video_rating_url).then(data => data.json().then(json_data => {
+        add_likes_to_video(json_data.likes)
+    }))
+}
+
+
+
+function update_video_page() {
+    window.alert('video-page')
+    update_views_on_video()
+    update_likes_on_video()
+}
+
+function add_views_to_channel(views) {
+    if (channel_views === undefined) {
+        channel_views = document.createElement('p')
+        const class_name = 'pen-feed-banner__subs'
+        channel_views.className = class_name
+        channel_views.style.paddingTop = '5px'
+        let channel_info = document.getElementsByClassName(class_name)[0]
+        channel_info.after(channel_views)
+    }
+    channel_views.innerHTML = `${views} ${get_views_word(views)}`
+}
+
+function update_views_on_channel() {
+    let channel_info_url = 'https://studio.rutube.ru/api/profile/user/' + url_id
+    fetch(channel_info_url).then(data => data.json().then(json_data => {
+        add_views_to_channel(json_data.hits)
+    }))
+}
+
+function update_channel_page() {
+    window.alert('channel-page')
+    update_views_on_channel()
 }
 
 function get_videos_views(channel_id) {
@@ -41,49 +99,38 @@ function get_videos_divs() {
     })
 }
 
-window.onload = function () {
+let current_video = ''
+let current_channel = ''
+
+function update_pages() {
+    url_id = location.href.split('/').at(-2)
     if (window.location.href.includes('rutube.ru/video/')) {
-        update_video_page()
-    } else if (window.location.href.includes('rutube.ru/channel/')) {
-        get_videos_divs()
+        if (current_video !== url_id) {
+            current_video = url_id
+            setTimeout(() => update_video_page(), 250)
+        }
+    } else {
+        views_p = undefined
+        likes_span = undefined
+        current_video = ''
     }
-    console.log(window.reduxState)
-    /*
-    var observer = new MutationObserver(function (mutations) {
-        mutations.forEach(function (mutation) {
-            if (mutation.target.className === 'pen-page-header_video-options-header-middle pen-page-header_color-default pen-page-header_size-default')
-                update_video_page()
-        });
-    });
-    const config = {
-        childList: true,
-        subtree: true,
-    };
-    observer.observe(document.body, config);
-    */
+    if (window.location.href.includes('rutube.ru/channel/')) {
+        if (current_channel !== url_id) {
+            current_channel = url_id
+            setTimeout(() => update_channel_page(), 250)
+        }
+    } else {
+        channel_views = undefined
+        current_channel = ''
+    }
 }
 
-let delay = false;
-
-function observerCallback() {
-    if (!delay) {
-        delay = true
-        setTimeout(() => delay = false, 500)
-        if (window.location.href.includes('rutube.ru/video/')) {
-            setTimeout(() => update_video_page(), 100)
-        } else {
-            views_p = undefined
-        }
-        if (window.location.href.includes('rutube.ru/channel/')) {
-            get_videos_divs()
-        } else {
-
-        }
-    }
+window.onload = function () {
+    update_pages()
 }
 
 const config = {attributes: false, childList: true, subtree: false}
-const observer = new MutationObserver(observerCallback)
+const observer = new MutationObserver(update_pages)
 observer.observe(document.body, config)
 
 
